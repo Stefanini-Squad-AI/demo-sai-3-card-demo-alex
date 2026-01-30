@@ -102,6 +102,7 @@
             <h1>📦 Módulo de Cuentas (Accounts)</h1>
             <p style="font-size: 1.2em; opacity: 0.95;">Guía de Desarrollo de Historias de Usuario</p>
             <p style="margin-top: 10px;"><strong>Propósito:</strong> Gestión completa del ciclo de vida de cuentas de tarjetas de crédito, incluyendo visualización de información financiera y actualización transaccional de datos</p>
+            <p style="margin-top: 6px;"><strong>Documentación extendida:</strong> <a href="../../modules/account/account-overview.md" style="color: #fff; text-decoration: underline;">account-overview.md</a></p>
         </header>
 
         <section class="section">
@@ -149,11 +150,11 @@
 
             <h3>⚡ Factores de Aceleración de Desarrollo</h3>
             <ul style="line-height: 2;">
-                <li><strong>useAccountView Hook:</strong> Hook reutilizable que encapsula búsqueda y manejo de estado. Acelera desarrollo al evitar reimplementar lógica de carga y errores.</li>
-                <li><strong>useAccountUpdate Hook:</strong> Detecta cambios automticamente comparando estado original vs actual. Reduce complejidad de formularios de edición.</li>
-                <li><strong>AccountValidationService (Backend):</strong> Validaciones centralizadas evitan código duplicado. Nuevas validaciones se agregan una sola vez.</li>
-                <li><strong>Material-UI Components:</strong> TextField, Card, Button preconstruidos reducen tiempo de UI en 60%.</li>
-                <li><strong>API RESTful Documentada:</strong> 4 endpoints bien definidos facilitan integración frontend-backend en 1-2 días.</li>
+                <li><strong>useAccountView Hook:</strong> Consume `GET /account-view?accountId` y `GET /account-view/initialize`, resetea estado y expone `clearData`, `loading`, `error` y `validation` de forma reutilizable.</li>
+                <li><strong>useAccountUpdate Hook:</strong> Combina búsqueda (`GET /accounts/{accountId}`), `updateLocalData` y `resetForm`, detecta cambios (`hasChanges`) con comparación JSON y controla la mutación `PUT /accounts/{accountId}`.</li>
+                <li><strong>Screens y Layout compartido:</strong> `AccountViewScreen` y `AccountUpdateScreen` reutilizan `SystemHeader`, `LoadingSpinner`, tarjetas MUI, chips de estado y botones para mostrar datos sensibles o abrir el panel de test accounts.</li>
+                <li><strong>Hook `useMutation` + `apiClient`:</strong> Maneja retries/cancelaciones, reconoce respuestas de MSW (`ApiResponse`) y backend real, simplificando nuevas integraciones.</li>
+                <li><strong>APIs documentadas:</strong> `/account-view`, `/account-view/initialize`, `/accounts/{accountId}` y `/accounts/{accountId}` (PUT) garantizan un contrato claro con el backend.</li>
             </ul>
 
             <h3>📊 Guías de Complejidad</h3>
@@ -175,105 +176,114 @@
             <h3>🏗️ Componentes Clave</h3>
             <div class="grid">
                 <div class="card">
+                    <h4>AccountViewPage.tsx</h4>
+                    <p><strong>Responsabilidad:</strong> Solicita `userRole`, protege la ruta, maneja `initializeScreen` y redirige a `/menu/admin` o `/menu/main` desde `handleExit`.</p>
+                    <p><strong>Reusabilidad:</strong> Patrón de página protegida que puede copiarse para otras vistas sensibles.</p>
+                </div>
+                <div class="card">
+                    <h4>AccountUpdatePage.tsx</h4>
+                    <p><strong>Responsabilidad:</strong> Limpia datos (`clearData`), protege la ruta y expone `updateLocalData`, `resetForm` y `updateAccount` al screen.</p>
+                    <p><strong>Reusabilidad:</strong> Base para cualquier pantalla de edición que necesite detección de cambios y navegación condicional por rol.</p>
+                </div>
+                <div class="card">
                     <h4>AccountViewScreen.tsx</h4>
-                    <p><strong>Responsabilidad:</strong> Pantalla de búsqueda y visualización de cuentas con 4 tarjetas de información</p>
-                    <p><strong>Reusabilidad:</strong> Funciones de mascarado (maskSSN, maskCard) exportables para otros módulos</p>
+                    <p><strong>Responsabilidad:</strong> Formulario de búsqueda limitado a 11 dígitos con validaciones, chips de estado, tarjetas de información financiera/cliente/contacto y toggle de datos sensibles.</p>
+                    <p><strong>Reusabilidad:</strong> El pattern de `SystemHeader` + tarjetas MUI + alerta es replicable para vistas de lectura rápidas.</p>
                 </div>
                 <div class="card">
                     <h4>AccountUpdateScreen.tsx</h4>
-                    <p><strong>Responsabilidad:</strong> Edición con modo toggle, confirmación de guardado, detección de cambios</p>
-                    <p><strong>Reusabilidad:</strong> Patrón de toggle edit mode aplicable a cualquier formulario</p>
+                    <p><strong>Responsabilidad:</strong> Edición con `Edit Mode`, validaciones (ZIP, numéricos, status), confirmación (`Dialog`), atajos compatibles (F3/F5/F12) y chip de “Unsaved Changes”.</p>
+                    <p><strong>Reusabilidad:</strong> Se puede aplicar el toggle + confirm dialog a otros formularios críticos.</p>
                 </div>
                 <div class="card">
                     <h4>useAccountView.ts</h4>
-                    <p><strong>Responsabilidad:</strong> Hook para búsqueda con validación inline y manejo de estados (loading/error/data)</p>
-                    <p><strong>Reusabilidad:</strong> Plantilla para crear hooks de búsqueda en otros módulos</p>
+                    <p><strong>Responsabilidad:</strong> Orquesta `GET /account-view` y `/initialize`, expone `loading`, `error`, `data`, `clearData` y resuelve respuestas tanto de MSW como del backend real.</p>
+                    <p><strong>Reusabilidad:</strong> Modelo de hook para cualquier búsqueda de entidad con inicializadores y toggles de datos sensibles.</p>
                 </div>
                 <div class="card">
                     <h4>useAccountUpdate.ts</h4>
-                    <p><strong>Responsabilidad:</strong> Hook para actualización con detección automática de cambios</p>
-                    <p><strong>Reusabilidad:</strong> Lógica de comparación JSON reutilizable</p>
-                </div>
-                <div class="card">
-                    <h4>AccountViewService.java</h4>
-                    <p><strong>Responsabilidad:</strong> Búsqueda multi-entidad (CardXref → Account → Customer) con enmascarado de SSN</p>
-                    <p><strong>Reusabilidad:</strong> Patrón de lectura de 3 entidades relacionadas</p>
-                </div>
-                <div class="card">
-                    <h4>AccountUpdateService.java</h4>
-                    <p><strong>Responsabilidad:</strong> Actualización transaccional atómica de Account + Customer</p>
-                    <p><strong>Reusabilidad:</strong> Patrón @Transactional para operaciones multi-entidad</p>
-                </div>
-                <div class="card">
-                    <h4>AccountValidationService.java</h4>
-                    <p><strong>Responsabilidad:</strong> Validaciones de negocio centralizadas (FICO, ZIP, nombres, etc.)</p>
-                    <p><strong>Reusabilidad:</strong> Métodos de validación reutilizables (isValidAccountId, validateYesNo, etc.)</p>
+                    <p><strong>Responsabilidad:</strong> Busca la cuenta (`GET /accounts/{id}`), persiste cambios (`PUT /accounts/{id}`), detecta `hasChanges` por comparación JSON y controla estados de error/carga.</p>
+                    <p><strong>Reusabilidad:</strong> Hook de mutación listo para extenderse a otros CRUD que necesitan `hasChanges` y `resetForm`.</p>
                 </div>
             </div>
 
             <h3>🔗 Dependencias</h3>
             <ul style="line-height: 2;">
-                <li><strong>Account Entity:</strong> JPA Entity con 11 campos financieros y operativos</li>
-                <li><strong>Customer Entity:</strong> JPA Entity con 14 campos personales y de contacto</li>
-                <li><strong>CardXrefRecord:</strong> Tabla de relación Account-Customer-Card</li>
-                <li><strong>Material-UI:</strong> TextField, Card, Button, IconButton, Snackbar</li>
-                <li><strong>Redux Toolkit:</strong> Gestión de estado global (opcional para este módulo)</li>
+                <li><strong>@mui/material + @mui/icons-material:</strong> Grid, Card, Chip, Dialog, Switch y Alert sostienen toda la UI del módulo.</li>
+                <li><strong>react-router-dom:</strong> `useNavigate` y chequeo de `localStorage.userRole` protegen `/account-view` y `/account-update`.</li>
+                <li><strong>~/hooks/useApi.ts + ~/services/api.ts:</strong> `useMutation`, `apiClient`, `ApiResponse` unifican GET/PUT, retries y manejo de respuestas simuladas o reales.</li>
+                <li><strong>app/mocks/accountHandlers.ts (MSW):</strong> Test accounts, inizialización, errores controlados y `test-accounts` activan las banderas visuales en desarrollo.</li>
+                <li><strong>SystemHeader + LoadingSpinner:</strong> Garantizan consistencia de layout y feedback de carga en ambas pantallas.</li>
             </ul>
 
             <h3>🌐 Interfaces Públicas (APIs)</h3>
             <pre><code>GET  /api/account-view?accountId={id}
-     → Buscar y obtener cuenta completa con datos de cliente
-     → Response: AccountViewResponseDto (JSON)
+     → PadStart a 11 dígitos y valida que no sea cero antes de consultar
+     → Response: AccountViewResponse (JSON) con mensajes (`infoMessage`, `errorMessage`)
 
 GET  /api/account-view/initialize
-     → Inicializar pantalla con metadata del sistema
-     → Response: AccountViewResponseDto con fecha/hora/transactionId
+     → Devuelve metadata (`currentDate`, `transactionId`) para preloader
+     → Response: AccountViewResponse parcial con fecha/hora
 
 GET  /api/accounts/{accountId}
-     → Obtener datos de cuenta para formulario de edición
-     → Response: AccountUpdateRequestDto (JSON)
+     → Usado por el formulario de edición para cargar `AccountUpdateData`
+     → Response: AccountUpdateData (JSON)
 
 PUT  /api/accounts/{accountId}
-     → Actualizar cuenta y cliente (transaccional)
-     → Body: AccountUpdateRequestDto
-     → Response: Map&lt;String, String&gt; con mensaje de éxito</code></pre>
+     → Persiste `AccountUpdateData` actualizado
+     → Body: AccountUpdateData
+     → Response: AccountUpdateResponse { success, data?, errors? }</code></pre>
 
             <h3>📊 Modelos de Datos (Simplificado)</h3>
             <pre><code>// TypeScript Frontend
 interface AccountViewResponse {
+  currentDate: string;
+  transactionId: string;
+  accountStatus?: string;        // Y/N
+  creditLimit?: number;
+  cashCreditLimit?: number;
+  currentBalance?: number;
+  customerSsn?: string;          // Enmascarado por default
+  ficoScore?: number;            // 300-850
+  firstName?: string;
+  lastName?: string;
+  zipCode?: string;
+  addressLine1?: string;
+  cardNumber?: string;
+  primaryCardHolderFlag?: string;
+  groupId?: string;
+  eftAccountId?: string;
+  infoMessage?: string;
+  errorMessage?: string;
+}
+
+interface AccountUpdateData {
   accountId: number;
-  accountStatus: string;  // Y/N
-  creditLimit: number;
+  activeStatus: string;
   currentBalance: number;
+  creditLimit: number;
+  cashCreditLimit: number;
+  openDate: string;
+  expirationDate: string;
+  groupId: string;
   customerId: number;
-  customerSsn: string;    // Enmascarado "XXX-XX-XXXX"
-  ficoScore: number;      // 300-850
   firstName: string;
   lastName: string;
+  ssn: string;
   zipCode: string;
-  // ... otros 20+ campos
-}
-
-// Java Backend
-@Entity
-public class Account {
-  @Id private Long accountId;      // 11 dígitos
-  private String activeStatus;     // Y/N
-  private BigDecimal creditLimit;
-  private BigDecimal currentBalance;
-  private LocalDate openDate;
-  // ... otros campos
-}
-
-@Entity
-public class Customer {
-  @Id private Long customerId;     // 9 dígitos
-  private String firstName;
-  private String lastName;
-  private String socialSecurityNumber;  // 9 dígitos
-  private Integer ficoScore;            // 300-850
-  private String zipCode;
-  // ... otros campos
+  stateCode: string;
+  countryCode: string;
+  phoneNumber1: string;
+  governmentIssuedId: string;
+  primaryCardIndicator: string;
+  ficoScore: number;
+}</code></pre>
+            <pre><code>// AccountUpdateResponse
+interface AccountUpdateResponse {
+  success: boolean;
+  data?: AccountUpdateData;
+  message?: string;
+  errors?: string[];
 }</code></pre>
         </section>
 
@@ -347,6 +357,27 @@ public class Customer {
                     <strong>Entonces</strong> muestra "Account not found in Cross ref file"</p>
                 </div>
             </div>
+        </section>
+
+        <section class="section">
+            <h2>⌨️ Atajos y comportamientos operativos</h2>
+            <ul style="line-height: 1.8;">
+                <li><strong>F3 / Escape:</strong> atajos que disparan `handleExit` en ambas pantallas y regresan al menú correspondiente luego de validar `localStorage.userRole`.</li>
+                <li><strong>F5:</strong> cuando `hasChanges` es verdad, dispara el guardado (`handleUpdate`) y abre el diálogo de confirmación antes de llamar `PUT /accounts/{id}`.</li>
+                <li><strong>F12:</strong> resetea el formulario usando `resetForm`, limpia errores locales y vuelve a mostrar los datos originales.</li>
+                <li><strong>Edit Mode:</strong> el `Switch` habilita/deshabilita campos clave (`TextField`, `MenuItem`, `Switch`) y muestra un chip de “Unsaved Changes”.</li>
+                <li><strong>Test Accounts:</strong> botón condicional en desarrollo (`import.meta.env.DEV`) que muestra cuentas preconfiguradas para pruebas de QA.</li>
+                <li><strong>Datos sensibles:</strong> el botón “Show / Hide Sensitive Data” controla `showSensitiveData`, enmascarando SSN y número de tarjeta por defecto.</li>
+            </ul>
+        </section>
+
+        <section class="section">
+            <h2>🧪 Tests y mocks</h2>
+            <ul style="line-height: 1.8;">
+                <li><strong>app/mocks/accountHandlers.ts:</strong> cubre `/api/account-view`, `/api/account-view/initialize`, `/api/accounts/:accountId`, `/api/accounts/:accountId` (PUT) y endpoints dev (`test-accounts`, `test-error/:errorType`).</li>
+                <li><strong>Cuentas de prueba:</strong> `11111111111`, `22222222222`, `33333333333`, `44444444444` se exponen en un `Collapse` para replicar escenarios reales sin backend.</li>
+                <li><strong>Comportamientos simulados:</strong> MSW devuelve `ApiResponse` con `success` y `data`, lo que permite validar `useMutation` y generar errores controlados antes de llamar al backend real.</li>
+            </ul>
         </section>
 
         <section class="section">
