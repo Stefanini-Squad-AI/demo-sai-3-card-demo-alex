@@ -171,8 +171,10 @@ interface AuthState {
 - `AccountUpdatePage.tsx` - Página de actualización
 
 **APIs Públicas**:
-- `GET /api/account/acccount` - Consulta de cuenta por ID
-- `PUT /api/account/update` - Actualización de información de cuenta
+- `GET /api/account-view?accountId={id}` - Consulta de cuenta con padding a 11 dígitos y validaciones de input
+- `GET /api/account-view/initialize` - Inicializa la pantalla con metadata (fecha, transactionId)
+- `GET /api/accounts/{accountId}` - Carga los datos para el formulario de edición
+- `PUT /api/accounts/{accountId}` - Actualiza la cuenta y datos del cliente
 
 **Tipos de Datos**:
 ```typescript
@@ -210,6 +212,8 @@ interface Customer {
 - Como usuario back-office, quiero consultar los detalles de una cuenta para ver el saldo y límite de crédito
 - Como usuario back-office, quiero actualizar la información de un cliente para mantener los datos actualizados
 - Como usuario, quiero ver todas las tarjetas asociadas a una cuenta para gestionar los plásticos
+
+**Documentación adicional:** [modules/account/account-overview.md](modules/account/account-overview.md)
 
 ---
 
